@@ -1,11 +1,9 @@
 # Imports
 import json
 from langfuse.openai import openai
-from config import get_openai_key
 from tools.calendar_tools import list_events, create_event, get_list_events_schema, get_create_event_schema
 from tools.mail_tools import list_emails, send_email, get_list_emails_schema, get_send_email_schema
 from tools.todos_tools import list_tasks, add_task, complete_task, get_list_tasks_schema, get_add_task_schema, get_complete_task_schema
-from agent import schedule_meeting_with_person
 
 # System prompt describing the agent's capabilities
 SYSTEM_PROMPT = (

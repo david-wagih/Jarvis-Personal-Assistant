@@ -1,16 +1,39 @@
-from openai import OpenAI
+# Imports
 import os
-from googleapiclient.discovery import build
-from datetime import datetime
+import sys
+import json
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-import sys
-import json
+from langfuse.openai import openai
 
+# Load environment variables
 load_dotenv('.env')
-openai_key = os.environ["OPENAI_API_KEY"]
+
+# Configuration
+openai_key = os.environ.get("OPENAI_API_KEY")
 google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+google_calendar_delegated_user = os.environ.get("GOOGLE_CALENDAR_DELEGATED_USER")
+
+# Langfuse setup
+# langfuse = Langfuse(
+#     secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+#     public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+#     host="https://cloud.langfuse.com"
+# )
+
+# OpenAI session setup
+# openai_session = OpenAI(api_key=openai_key)
+
+openai.langfuse_auth_check()
+
+# Google API setup
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.events'
+]
+
+# Validate service account file
 if not google_credentials:
     print("ERROR: GOOGLE_APPLICATION_CREDENTIALS is not set in the environment or .env file.")
     sys.exit(1)
@@ -33,20 +56,11 @@ except Exception as e:
     print(f"ERROR: Failed to read or parse service account file: {e}")
     sys.exit(1)
 
-google_calendar_delegated_user = os.environ["GOOGLE_CALENDAR_DELEGATED_USER"]
-
-
-openai_session = OpenAI(api_key=openai_key)
-
-
-SCOPES = [
-    'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/calendar.events'
-]
 credentials = service_account.Credentials.from_service_account_file(
     google_credentials, scopes=SCOPES
 ).with_subject(google_calendar_delegated_user)
 
+# Function definitions
 def list_events(time_min, time_max):
     service = build('calendar', 'v3', credentials=credentials)
     events_result = service.events().list(
@@ -112,8 +126,9 @@ TOOLS = [
     {"type": "function", "function": get_list_emails_schema()}
 ]
 
-response = openai_session.chat.completions.create(
-    model="gpt-3.5-turbo",  # or "gpt-3.5-turbo"
+# Main execution
+response = openai.chat.completions.create(
+    model="gpt-3.5-turbo",
     messages=[
         {"role": "system", "content": "You are an assistant that can read my mail and calendar."},
         {"role": "user", "content": "Show me my next 3 calendar events and unread emails."}

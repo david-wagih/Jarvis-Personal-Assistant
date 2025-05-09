@@ -1,3 +1,5 @@
+import base64
+from email.mime.text import MIMEText
 from googleapiclient.discovery import build
 from config import get_google_credentials
 
@@ -13,6 +15,19 @@ def list_emails(query=''):
         snippet = msg_data.get('snippet', '')
         emails.append(snippet)
     return emails
+
+def send_email(to, subject, message_text):
+    credentials = get_google_credentials()
+    service = build('gmail', 'v1', credentials=credentials)
+    message = MIMEText(message_text)
+    message['to'] = to
+    message['subject'] = subject    
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    body = {'raw': raw}
+    sent_message = service.users().messages().send(userId='me', body=body).execute()
+    print(f"Email sent! Message ID: {sent_message['id']}")
+
+
 
 # OpenAI function schema for mail tool
 def get_list_emails_schema():
@@ -30,3 +45,29 @@ def get_list_emails_schema():
             "required": []
         }
     } 
+
+def get_send_email_schema():
+    return {
+        "name": "send_email",
+        "description": "Send an email to a specified recipient.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "description": "The email address of the recipient."
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "The subject of the email."
+                },
+                "message_text": {
+                    "type": "string",
+                    "description": "The body of the email."
+                }
+            },
+            "required": ["to", "subject", "message_text"]
+        }
+    }
+
+                    

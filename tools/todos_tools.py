@@ -22,7 +22,6 @@ def complete_task(task_id, tasklist_id='@default'):
     result = service.tasks().update(tasklist=tasklist_id, task=task_id, body=task).execute()
     return result
 
-# Example OpenAI function schema for listing tasks
 def get_list_tasks_schema():
     return {
         "name": "list_tasks",
@@ -36,5 +35,45 @@ def get_list_tasks_schema():
                 }
             },
             "required": []
+        }
+    }
+
+def get_add_task_schema():
+    return {
+        "name": "add_task",
+        "description": "Add a new task to a Google Tasks list.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "The title of the task."
+                },
+                "tasklist_id": {
+                    "type": "string",
+                    "description": "The ID of the task list (default: '@default')."
+                }
+            },
+            "required": ["title"]
+        }
+    }
+
+def get_complete_task_schema():
+    return {
+        "name": "complete_task",
+        "description": "Mark a task as completed in a Google Tasks list.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The ID of the task to complete."
+                },
+                "tasklist_id": {
+                    "type": "string",
+                    "description": "The ID of the task list (default: '@default')."
+                }
+            },
+            "required": ["task_id"]
         }
     }

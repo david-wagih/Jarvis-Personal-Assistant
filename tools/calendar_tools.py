@@ -14,6 +14,18 @@ def list_events(time_min, time_max):
     ).execute()
     return events_result.get('items', [])
 
+def create_event(summary, start, end):
+    credentials = get_google_credentials()
+    service = build('calendar', 'v3', credentials=credentials)
+    event = {
+        'summary': summary,
+        'start': {'dateTime': start},
+        'end': {'dateTime': end}
+    }
+    created_event = service.events().insert(calendarId='primary', body=event).execute()
+    return created_event
+
+
 # OpenAI function schema for calendar tool
 def get_list_events_schema():
     return {
@@ -34,3 +46,28 @@ def get_list_events_schema():
             "required": ["time_min", "time_max"]
         }
     } 
+
+def get_create_event_schema():
+    return {
+        "name": "create_event",
+        "description": "Create a new event in the primary calendar.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string",
+                    "description": "The summary of the event."
+                },
+                "start": {
+                    "type": "string",
+                    "description": "The start time of the event (RFC3339 format, e.g., '2022-01-01T00:00:00Z')"
+                },
+                "end": {
+                    "type": "string",
+                    "description": "The end time of the event (RFC3339 format, e.g., '2022-01-02T00:00:00Z')"
+                }
+            },
+            "required": ["summary", "start", "end"]
+        }
+    }
+        

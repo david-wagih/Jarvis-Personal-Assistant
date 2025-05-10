@@ -95,6 +95,15 @@ def main():
                         result = list_events(**arguments)
                     elif function_name == "create_event":
                         result = create_event(**arguments)
+                        # After creating an event, if there are guests, send them an email
+                        guests = arguments.get("guests")
+                        if guests and result and result.get("status") == "confirmed":
+                            subject = f"Meeting Scheduled: {arguments.get('summary', 'No Title')}"
+                            start = arguments.get('start', '')
+                            end = arguments.get('end', '')
+                            for guest_email in guests:
+                                message_text = f"Hi,\n\nYou have been invited to a meeting.\n\nSummary: {arguments.get('summary', 'No Title')}\nStart: {start}\nEnd: {end}\n\nBest regards,\nDavid"
+                                send_email(to=guest_email, subject=subject, message_text=message_text)
                     elif function_name == "list_emails":
                         result = list_emails(**arguments)
                     elif function_name == "send_email":

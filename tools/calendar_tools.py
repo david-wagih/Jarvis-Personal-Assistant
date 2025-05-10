@@ -14,7 +14,7 @@ def list_events(time_min, time_max):
     ).execute()
     return events_result.get('items', [])
 
-def create_event(summary, start, end):
+def create_event(summary, start, end, guests=None):
     credentials = get_credentials()
     service = build('calendar', 'v3', credentials=credentials)
     event = {
@@ -22,6 +22,8 @@ def create_event(summary, start, end):
         'start': {'dateTime': start},
         'end': {'dateTime': end}
     }
+    if guests:
+        event['attendees'] = [{'email': email} for email in guests]
     created_event = service.events().insert(calendarId='primary', body=event).execute()
     return created_event
 
@@ -50,7 +52,7 @@ def get_list_events_schema():
 def get_create_event_schema():
     return {
         "name": "create_event",
-        "description": "Create a new event in the primary calendar. Only use this after confirming with list_events that David is available at the requested time. Never create an event without checking availability first.",
+        "description": "Create a new event in the primary calendar. Only use this after confirming with list_events that David is available at the requested time. Never create an event without checking availability first. Optionally, add guests to the event by providing their email addresses.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -65,6 +67,11 @@ def get_create_event_schema():
                 "end": {
                     "type": "string",
                     "description": "The end time of the event (RFC3339 format, e.g., '2022-01-02T00:00:00Z')"
+                },
+                "guests": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "A list of email addresses to add as guests/attendees to the event."
                 }
             },
             "required": ["summary", "start", "end"]

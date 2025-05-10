@@ -11,26 +11,33 @@ SCOPES = [
     'https://www.googleapis.com/auth/calendar',  # Write access
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/tasks'  # Write access
+    'https://www.googleapis.com/auth/tasks',
+    'https://www.googleapis.com/auth/gmail.modify'
 ]
 
 def get_credentials():
+    """
+    Loads credentials for Google APIs.
+    - In production (CLOUD_RUN env var set), only loads from token.pickle and never runs the OAuth flow.
+    - In local/dev, runs the OAuth flow if needed.
+    """
+    print("token.pickle exists:", os.path.exists('token.pickle'), "cwd:", os.getcwd())
     creds = None
-    # The file token.pickle stores the user's access and refresh tokens.
+    is_cloud_run = os.environ.get('CLOUD_RUN') == '1'
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
-    # If there are no (valid) credentials, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-        else:
+        elif not is_cloud_run:
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials_oauth.json', SCOPES)
             creds = flow.run_local_server(port=8080)
-        # Save the credentials for the next run
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(creds, token)
+        else:
+            raise RuntimeError("No valid credentials found and cannot run OAuth flow in Cloud Run. Please generate token.pickle locally and deploy it.")
     return creds
 
 def test_gmail():

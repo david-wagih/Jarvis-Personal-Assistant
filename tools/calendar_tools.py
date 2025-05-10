@@ -27,6 +27,25 @@ def create_event(summary, start, end, guests=None):
     created_event = service.events().insert(calendarId='primary', body=event).execute()
     return created_event
 
+def update_event(event_id, summary=None, start=None, end=None, guests=None):
+    credentials = get_credentials()
+    service = build('calendar', 'v3', credentials=credentials)
+    event = {
+        'id': event_id
+    }
+    if summary:
+        event['summary'] = summary
+    if start:
+        event['start'] = {'dateTime': start}
+    if end:
+        event['end'] = {'dateTime': end}
+    if guests:
+        event['attendees'] = [{'email': email} for email in guests]
+    updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+    return updated_event
+
+
+
 
 # OpenAI function schema for calendar tool
 def get_list_events_schema():
@@ -78,3 +97,35 @@ def get_create_event_schema():
         }
     }
         
+def get_update_event_schema():
+    return {
+        "name": "update_event",
+        "description": "Update an existing event in the primary calendar. Use this to modify the details of an event after it has been created. Optionally, add or remove guests from the event by providing their email addresses.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": "The ID of the event to update."
+                },
+                "summary": {
+                    "type": "string",
+                    "description": "The new summary of the event."
+                },
+                "start": {
+                    "type": "string",
+                    "description": "The new start time of the event (RFC3339 format, e.g., '2022-01-01T00:00:00Z')"
+                },
+                "end": {
+                    "type": "string",
+                    "description": "The new end time of the event (RFC3339 format, e.g., '2022-01-02T00:00:00Z')"
+                },  
+                "guests": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "A list of email addresses to add as guests/attendees to the event."
+                }
+            },  
+            "required": ["event_id"]
+        }
+    }

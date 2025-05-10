@@ -31,8 +31,10 @@ def get_credentials():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         elif not is_cloud_run:
+            # Use absolute path for credentials_oauth.json
+            credentials_path = os.path.join(os.path.dirname(__file__), '..', 'credentials_oauth.json')
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials_oauth.json', SCOPES)
+                credentials_path, SCOPES)
             creds = flow.run_local_server(port=8080)
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)

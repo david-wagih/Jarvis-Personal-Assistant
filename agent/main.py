@@ -9,9 +9,11 @@ from tools.oauth_integration import get_credentials
 from datetime import datetime
 import threading
 import time
+import os
 
 # Load contacts
-with open('contacts.json', 'r') as f:
+contacts_path = os.path.join(os.path.dirname(__file__), 'contacts.json')
+with open(contacts_path, 'r') as f:
     CONTACTS = json.load(f)['contacts']
 
 # Format contacts for prompt
@@ -170,7 +172,6 @@ def poll_unread_emails(process_new_email_tool, interval=60):
                                     subject = f"Meeting Deleted: {arguments.get('summary', 'No Title')}"
                                     start = arguments.get('start', '')
                                     end = arguments.get('end', '')
-                                    
                             else:
                                 result = {"error": "Unknown tool"}
                         except Exception as e:

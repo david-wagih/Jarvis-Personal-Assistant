@@ -1,11 +1,11 @@
 import base64
 from email.mime.text import MIMEText
 from googleapiclient.discovery import build
-from config import get_google_credentials
+from tools.oauth_integration import get_credentials
 
 # Mail tool function
 def list_emails(query=''):
-    credentials = get_google_credentials()
+    credentials = get_credentials()
     service = build('gmail', 'v1', credentials=credentials)
     results = service.users().messages().list(userId='me', q=query, maxResults=10).execute()
     messages = results.get('messages', [])
@@ -17,7 +17,7 @@ def list_emails(query=''):
     return emails
 
 def send_email(to, subject, message_text):
-    credentials = get_google_credentials()
+    credentials = get_credentials()
     service = build('gmail', 'v1', credentials=credentials)
     message = MIMEText(message_text)
     message['to'] = to

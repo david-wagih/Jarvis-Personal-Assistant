@@ -1,9 +1,9 @@
 from googleapiclient.discovery import build
-from config import get_google_credentials
+from tools.oauth_integration import get_credentials
 
 # Calendar tool function
 def list_events(time_min, time_max):
-    credentials = get_google_credentials()
+    credentials = get_credentials()
     service = build('calendar', 'v3', credentials=credentials)
     events_result = service.events().list(
         calendarId='primary',
@@ -15,7 +15,7 @@ def list_events(time_min, time_max):
     return events_result.get('items', [])
 
 def create_event(summary, start, end):
-    credentials = get_google_credentials()
+    credentials = get_credentials()
     service = build('calendar', 'v3', credentials=credentials)
     event = {
         'summary': summary,
@@ -30,7 +30,7 @@ def create_event(summary, start, end):
 def get_list_events_schema():
     return {
         "name": "list_events",
-        "description": "List all events in a calendar between two RFC3339 datetimes.",
+        "description": "List all events in a calendar between two RFC3339 datetimes. Use this tool to check if David is available before scheduling or creating any new event. Always use this before calling create_event.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -45,12 +45,12 @@ def get_list_events_schema():
             },
             "required": ["time_min", "time_max"]
         }
-    } 
+    }
 
 def get_create_event_schema():
     return {
         "name": "create_event",
-        "description": "Create a new event in the primary calendar.",
+        "description": "Create a new event in the primary calendar. Only use this after confirming with list_events that David is available at the requested time. Never create an event without checking availability first.",
         "parameters": {
             "type": "object",
             "properties": {

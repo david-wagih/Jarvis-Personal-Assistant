@@ -30,17 +30,23 @@ def create_event(summary, start, end, guests=None):
 def update_event(event_id, summary=None, start=None, end=None, guests=None):
     credentials = get_credentials()
     service = build('calendar', 'v3', credentials=credentials)
-    event = {
-        'id': event_id
-    }
-    if summary:
-        event['summary'] = summary
+    # Fetch the existing event
+    existing_event = service.events().get(calendarId='primary', eventId=event_id).execute()
+    event = {}
+    # Use provided summary or fallback to existing
+    event['summary'] = summary if summary else existing_event.get('summary', 'No title')
     if start:
-        event['start'] = {'dateTime': start}
+        event['start'] = {'dateTime': start, 'timeZone': 'Africa/Cairo'}
+    else:
+        event['start'] = existing_event['start']
     if end:
-        event['end'] = {'dateTime': end}
+        event['end'] = {'dateTime': end, 'timeZone': 'Africa/Cairo'}
+    else:
+        event['end'] = existing_event['end']
     if guests:
         event['attendees'] = [{'email': email} for email in guests]
+    elif 'attendees' in existing_event:
+        event['attendees'] = existing_event['attendees']
     updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
     return updated_event
 

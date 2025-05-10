@@ -44,6 +44,11 @@ def update_event(event_id, summary=None, start=None, end=None, guests=None):
     updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
     return updated_event
 
+def delete_event(event_id):
+    credentials = get_credentials()
+    service = build('calendar', 'v3', credentials=credentials)
+    service.events().delete(calendarId='primary', eventId=event_id).execute()
+    return f"Event {event_id} deleted successfully."
 
 
 
@@ -126,6 +131,23 @@ def get_update_event_schema():
                     "description": "A list of email addresses to add as guests/attendees to the event."
                 }
             },  
+            "required": ["event_id"]
+        }
+    }
+
+
+def get_delete_event_schema():
+    return {
+        "name": "delete_event",
+        "description": "Delete an existing event from the primary calendar. Use this to remove an event after it has been created.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": "The ID of the event to delete."
+                }
+            },
             "required": ["event_id"]
         }
     }

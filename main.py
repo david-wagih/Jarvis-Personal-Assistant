@@ -1,7 +1,7 @@
 # Imports
 import json
 from langfuse.openai import openai
-from tools.calendar_tools import get_update_event_schema, list_events, create_event, get_list_events_schema, get_create_event_schema, update_event
+from tools.calendar_tools import delete_event, get_delete_event_schema, get_update_event_schema, list_events, create_event, get_list_events_schema, get_create_event_schema, update_event
 from tools.mail_tools import list_emails, mark_email_as_read, send_email, get_list_emails_schema, get_send_email_schema
 from tools.process_new_emails_tools import get_process_new_email_schema, process_new_email_tool
 from tools.todos_tools import list_tasks, add_task, complete_task, get_list_tasks_schema, get_add_task_schema, get_complete_task_schema
@@ -52,7 +52,8 @@ TOOLS = [
     {"type": "function", "function": get_add_task_schema()},
     {"type": "function", "function": get_complete_task_schema()},
     {"type": "function", "function": get_process_new_email_schema()},
-    {"type": "function", "function": get_update_event_schema()}
+    {"type": "function", "function": get_update_event_schema()},
+    {"type": "function", "function": get_delete_event_schema()}
 ]
 
 def fetch_and_clear_new_emails():
@@ -160,6 +161,16 @@ def poll_unread_emails(process_new_email_tool, interval=60):
                                     for guest_email in guests:
                                         message_text = f"Hi,\n\nThe meeting has been updated.\n\nSummary: {arguments.get('summary', 'No Title')}\nStart: {start}\nEnd: {end}\n\nBest regards,\nDavid"
                                         send_email(to=guest_email, subject=subject, message_text=message_text)
+                            elif function_name == "delete_event":
+                                result = delete_event(**arguments)
+                                print(f"Deleted event: {result}")
+                                # After deleting an event, if there are guests, send them an email
+                                guests = arguments.get("guests")
+                                if guests and result and result.get("status", "confirmed") == "confirmed":
+                                    subject = f"Meeting Deleted: {arguments.get('summary', 'No Title')}"
+                                    start = arguments.get('start', '')
+                                    end = arguments.get('end', '')
+                                    
                             else:
                                 result = {"error": "Unknown tool"}
                         except Exception as e:
@@ -274,6 +285,15 @@ def main():
                             for guest_email in guests:
                                 message_text = f"Hi,\n\nThe meeting has been updated.\n\nSummary: {arguments.get('summary', 'No Title')}\nStart: {start}\nEnd: {end}\n\nBest regards,\nDavid"
                                 send_email(to=guest_email, subject=subject, message_text=message_text)
+                    elif function_name == "delete_event":
+                        result = delete_event(**arguments)
+                        print(f"Deleted event: {result}")
+                        # After deleting an event, if there are guests, send them an email
+                        guests = arguments.get("guests")
+                        if guests and result and result.get("status", "confirmed") == "confirmed":
+                            subject = f"Meeting Deleted: {arguments.get('summary', 'No Title')}"
+                            start = arguments.get('start', '')
+                            end = arguments.get('end', '')
                     else:
                         result = {"error": "Unknown tool"}
                 except Exception as e:
@@ -387,6 +407,15 @@ def main():
                                 for guest_email in guests:
                                     message_text = f"Hi,\n\nThe meeting has been updated.\n\nSummary: {arguments.get('summary', 'No Title')}\nStart: {start}\nEnd: {end}\n\nBest regards,\nDavid"
                                     send_email(to=guest_email, subject=subject, message_text=message_text)
+                        elif function_name == "delete_event":
+                            result = delete_event(**arguments)
+                            print(f"Deleted event: {result}")
+                            # After deleting an event, if there are guests, send them an email
+                            guests = arguments.get("guests")
+                            if guests and result and result.get("status", "confirmed") == "confirmed":
+                                subject = f"Meeting Deleted: {arguments.get('summary', 'No Title')}"
+                                start = arguments.get('start', '')
+                                end = arguments.get('end', '')
                         else:
                             result = {"error": "Unknown tool"}
                     except Exception as e:

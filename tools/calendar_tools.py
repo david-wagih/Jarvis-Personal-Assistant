@@ -105,18 +105,13 @@ def get_create_event_schema():
 def get_update_event_schema():
     return {
         "name": "update_event",
-        "description": "Update an existing event in the primary calendar. Use this to modify the details of an event after it has been created. Optionally, add or remove guests from the event by providing their email addresses.",
+        "description": "Update an existing calendar event",
         "parameters": {
             "type": "object",
             "properties": {
-                "event_id": {
-                    "type": "string",
-                    "description": "The ID of the event to update."
-                },
-                "summary": {
-                    "type": "string",
-                    "description": "The new summary of the event."
-                },
+                "event_id": {"type": "string", "description": "The ID of the event to update"},
+                "summary": {"type": "string", "description": "The new title of the event"},
+                "guests": {"type": "array", "items": {"type": "string"}, "description": "List of guest emails"},
                 "start": {
                     "type": "string",
                     "description": "The new start time of the event (RFC3339 format, e.g., '2022-01-01T00:00:00Z')"
@@ -124,15 +119,10 @@ def get_update_event_schema():
                 "end": {
                     "type": "string",
                     "description": "The new end time of the event (RFC3339 format, e.g., '2022-01-02T00:00:00Z')"
-                },  
-                "guests": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "A list of email addresses to add as guests/attendees to the event."
                 }
-            },  
-            "required": ["event_id"]
-        }
+            },
+            "required": ["event_id"],
+        },
     }
 
 

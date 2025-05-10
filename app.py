@@ -3,6 +3,8 @@ import json
 from main import SYSTEM_PROMPT, TOOLS, list_events, create_event, list_emails, send_email, list_tasks, add_task, complete_task, process_new_email_tool, update_event
 from langfuse.openai import openai
 import datetime
+import pytz
+from datetime import datetime
 
 from tools.calendar_tools import delete_event
 
@@ -36,8 +38,14 @@ def handle_tool_calls(msg):
                 result = complete_task(**arguments)
             elif function_name == "list_tasks":
                 result = list_tasks(**arguments)
+                # If result is empty, return a friendly message
+                if isinstance(result, list) and len(result) == 0:
+                    result = "You have no tasks to complete."
             elif function_name == "list_events":
                 result = list_events(**arguments)
+                # If result is empty, return a friendly message
+                if isinstance(result, list) and len(result) == 0:
+                    result = "You have no upcoming events in your calendar."
             elif function_name == "create_event":
                 result = create_event(**arguments)
             elif function_name == "list_emails":
@@ -118,3 +126,7 @@ def check_for_new_emails():
 if st.button("Check for New Emails"):
     logs = check_for_new_emails()
     st.session_state.logs.extend(logs)
+
+cairo = pytz.timezone('Africa/Cairo')
+start_time = cairo.localize(datetime(2025, 5, 10, 17, 0, 0))
+start_time_iso = start_time.isoformat()

@@ -100,7 +100,7 @@ with st.expander("Logs / Tool Calls", expanded=False):
         st.write(log)
 
 def check_for_new_emails():
-    today = datetime.datetime.now().strftime('%Y/%m/%d')
+    today = datetime.now().strftime('%Y/%m/%d')
     gmail_query = f'is:unread after:{today}'
     unread_emails = list_emails(query=gmail_query, max_results=50)
     logs = []

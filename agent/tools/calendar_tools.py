@@ -19,8 +19,8 @@ def create_event(summary, start, end, guests=None):
     service = build('calendar', 'v3', credentials=credentials)
     event = {
         'summary': summary,
-        'start': {'dateTime': start},
-        'end': {'dateTime': end}
+        'start': {'dateTime': start, 'timeZone': 'Africa/Cairo'},
+        'end': {'dateTime': end, 'timeZone': 'Africa/Cairo'}
     }
     if guests:
         event['attendees'] = [{'email': email} for email in guests]
@@ -30,25 +30,31 @@ def create_event(summary, start, end, guests=None):
 def update_event(event_id, summary=None, start=None, end=None, guests=None):
     credentials = get_credentials()
     service = build('calendar', 'v3', credentials=credentials)
-    # Fetch the existing event
-    existing_event = service.events().get(calendarId='primary', eventId=event_id).execute()
-    event = {}
-    # Use provided summary or fallback to existing
-    event['summary'] = summary if summary else existing_event.get('summary', 'No title')
-    if start:
-        event['start'] = {'dateTime': start, 'timeZone': 'Africa/Cairo'}
-    else:
-        event['start'] = existing_event['start']
-    if end:
-        event['end'] = {'dateTime': end, 'timeZone': 'Africa/Cairo'}
-    else:
-        event['end'] = existing_event['end']
-    if guests:
-        event['attendees'] = [{'email': email} for email in guests]
-    elif 'attendees' in existing_event:
-        event['attendees'] = existing_event['attendees']
-    updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
-    return updated_event
+    try:
+        # Fetch the existing event
+        existing_event = service.events().get(calendarId='primary', eventId=event_id).execute()
+        event = {}
+        # Use provided summary or fallback to existing
+        event['summary'] = summary if summary else existing_event.get('summary', 'No title')
+        if start:
+            event['start'] = {'dateTime': start, 'timeZone': 'Africa/Cairo'}
+        else:
+            event['start'] = existing_event['start']
+        if end:
+            event['end'] = {'dateTime': end, 'timeZone': 'Africa/Cairo'}
+        else:
+            event['end'] = existing_event['end']
+        if guests:
+            event['attendees'] = [{'email': email} for email in guests]
+        elif 'attendees' in existing_event:
+            event['attendees'] = existing_event['attendees']
+        updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+        return updated_event
+    except Exception as e:
+        if "Not Found" in str(e) or "404" in str(e):
+            return {"error": f"Event with ID {event_id} not found. It may have been deleted or doesn't exist."}
+        else:
+            return {"error": f"Failed to update event: {str(e)}"}
 
 def delete_event(event_id):
     credentials = get_credentials()

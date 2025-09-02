@@ -1,117 +1,288 @@
-# Jarvis: Proactive AI Assistant for Email, Calendar, and Tasks
+# Jarvis: Intelligent AI Personal Assistant
 
 ## Overview
-Jarvis is a proactive AI assistant designed to help you manage your emails, Google Calendar events, and Google Tasks. It leverages OpenAI's GPT models and integrates with Google APIs to automate scheduling, email handling, and task management. Jarvis can be used via a command-line interface or a modern Streamlit web UI.
+Jarvis is an intelligent AI personal assistant that proactively manages emails, Google Calendar events, and Google Tasks. Built with OpenAI's GPT models and Google APIs, Jarvis provides a conversational interface for scheduling, email management, and task automation with human-in-the-loop confirmation for sensitive actions.
 
-## Features
-- **Proactive Email Handling:** Detects new emails, summarizes, and suggests/acts on meeting requests or reschedules.
-- **Smart Scheduling:** Checks your Google Calendar for availability before creating or updating events. Avoids double-booking.
-- **Task Management:** Lists, adds, and completes Google Tasks.
-- **Contact Resolution:** Uses a local contacts list to resolve names to email addresses for scheduling and communication.
-- **Human-in-the-Loop:** Asks for confirmation before sending emails or creating events.
-- **Web UI:** Chat with Jarvis using a Streamlit interface.
-- **Push Notification Support:** Can receive Gmail push notifications via Google Pub/Sub and webhooks.
-- **Experimental Voice Assistant:** (See `ELEVEN_LABS_TEST.Py`) Record speech, transcribe with Whisper, and respond with ElevenLabs TTS.
+## 🚀 Key Features
 
-## Architecture
-- **main.py:** Core CLI agent loop, polling for new emails, handling user input, and orchestrating tool calls.
-- **app.py:** Streamlit web UI for chatting with Jarvis and viewing logs.
-- **tools/**: Modular tools for calendar, mail, tasks, OAuth, and email processing.
-- **setup_gmail_pubsub.py:** Flask app for handling Gmail push notifications and storing new emails for the agent to process.
-- **local_agent_webhook.py:** Local webhook for testing email ingestion.
-- **agent.py:** Helper functions for advanced scheduling logic.
-- **contacts.json:** List of known contacts (name/email) for resolving scheduling requests.
-- **config.py:** Environment/configuration helpers.
-- **Dockerfile & entrypoint.sh:** Containerization and deployment scripts.
+### **Intelligent Email Processing**
+- **Proactive Email Monitoring**: Automatically detects and processes new unread emails
+- **Smart Email Analysis**: Analyzes email content to determine appropriate actions (reschedule requests, new meetings, cancellations, confirmations)
+- **Automatic Response**: Handles email-based requests without manual intervention
+- **Email Marking**: Automatically marks processed emails as read
 
-## Setup Instructions
+### **Smart Calendar Management**
+- **Availability Checking**: Always checks calendar availability before scheduling meetings
+- **Timezone Awareness**: Properly handles Cairo timezone (UTC+2) for all scheduling
+- **Conflict Prevention**: Prevents double-booking by checking existing commitments
+- **Meeting Updates**: Handles reschedule requests by updating existing events
+- **Guest Management**: Automatically sends calendar invitations to meeting participants
 
-### 1. Clone the Repository
-```sh
-git clone <your-repo-url>
-cd stakpak-hackathon-day
-```
+### **Task Management**
+- **Google Tasks Integration**: List, add, and complete tasks
+- **Task Organization**: Manage tasks across different task lists
+- **Task Status Tracking**: Mark tasks as completed with status updates
 
-### 2. Install Python Dependencies
-```sh
+### **Contact Management**
+- **Local Contact Resolution**: Uses `contacts.json` to resolve names to email addresses
+- **Automatic Guest Invitations**: Sends meeting invitations to contacts automatically
+- **Contact Validation**: Ensures all scheduling uses verified contact information
+
+### **Conversational Interface**
+- **ChatGPT-like Experience**: Clean, minimal output without verbose logging
+- **Natural Language Processing**: Understands natural language requests for scheduling
+- **Context Awareness**: Maintains conversation context across interactions
+- **Human-in-the-Loop**: Requires confirmation for sensitive actions (emails, calendar changes)
+
+## 🏗️ Architecture
+
+### **Core Components**
+- **`main.py`**: Main CLI interface with email polling and conversation loop
+- **`config.py`**: Environment configuration and API key management
+- **`tools/`**: Modular tool system for different functionalities
+  - `calendar_tools.py`: Google Calendar operations
+  - `mail_tools.py`: Gmail operations
+  - `todos_tools.py`: Google Tasks operations
+  - `oauth_integration.py`: Google OAuth authentication
+  - `process_new_emails_tools.py`: Email processing logic
+  - `gmail_watch_tools.py`: Gmail webhook setup
+
+### **Configuration Files**
+- **`contacts.json`**: Contact list for name-to-email resolution
+- **`credentials_oauth.json`**: Google OAuth credentials
+- **`service_account.json`**: Google Service Account for calendar operations
+- **`.env`**: Environment variables (API keys, configuration)
+
+### **Authentication & Security**
+- **OAuth 2.0**: Secure Google API authentication
+- **Token Management**: Automatic token refresh and storage
+- **Service Account**: Delegated access for calendar operations
+- **Environment Variables**: Secure API key management
+
+## 🛠️ Setup Instructions
+
+### **1. Prerequisites**
+- Python 3.13+
+- Google Cloud Project with APIs enabled
+- OpenAI API key
+- Google OAuth credentials
+
+### **2. Installation**
+```bash
+# Clone the repository
+git clone <repository-url>
+cd Jarvis-Personal-Assistant
+
+# Create virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
-Or use `pyproject.toml` with your preferred tool (e.g., `pip install .`).
 
-### 3. Environment Variables & Credentials
-- **Google OAuth:**
-  - Place your `credentials_oauth.json` (OAuth client) and `service_account.json` (for Pub/Sub, if needed) in the project root.
-  - The first run will prompt you to authenticate and generate `token.pickle`.
-- **OpenAI API Key:**
-  - Set `OPENAI_API_KEY` in your environment or `.env` file.
-- **Other Variables:**
-  - See `config.py` for additional options (e.g., `GOOGLE_APPLICATION_CREDENTIALS`).
+### **3. Configuration**
 
-### 4. Add Contacts
-Edit `contacts.json` to include your frequent contacts:
+#### **Environment Setup**
+Create a `.env` file in the root directory:
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_APPLICATION_CREDENTIALS=service_account.json
+GOOGLE_CALENDAR_DELEGATED_USER=your_email@gmail.com
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+```
+
+#### **Google API Setup**
+1. **OAuth Credentials**: Place `credentials_oauth.json` in the agent directory
+2. **Service Account**: Place `service_account.json` in the agent directory
+3. **First Run**: Execute `python main.py` to authenticate and generate `token.pickle`
+
+#### **Contact Configuration**
+Edit `agent/contacts.json`:
 ```json
 {
   "contacts": [
-    { "name": "Mahmoud Gamil", "email": "mahmoudgamiel28@gmail.com" },
-    { "name": "Ahmed Shehata", "email": "ahmedshehata20047@gmail.com" }
+    {
+      "name": "Mahmoud Gamil",
+      "email": "mahmoudgamiel28@gmail.com"
+    },
+    {
+      "name": "Ahmed Shehata", 
+      "email": "ahmedshehata20047@gmail.com"
+    },
+    {
+      "name": "David Wagih",
+      "email": "davidwagih62@gmail.com"
+    }
   ]
 }
 ```
 
-### 5. Running Locally (CLI)
-```sh
+### **4. Running Jarvis**
+
+#### **Command Line Interface**
+```bash
+cd agent
 python main.py
 ```
-- Jarvis will prompt for your commands and proactively process new emails.
-- Sensitive actions (sending emails, creating events) require confirmation.
 
-### 6. Running the Web UI
-```sh
-streamlit run app.py
-```
-- Chat with Jarvis in your browser.
-- View logs and tool call details.
-
-### 7. Running with Docker
-Build and run the container:
-```sh
+#### **Docker Deployment**
+```bash
+# Build the container
 docker build -t jarvis-assistant .
+
+# Run with environment variables
 docker run -p 8080:8080 \
-  -e OPENAI_API_KEY=... \
+  -e OPENAI_API_KEY=your_key \
   -e TOKEN_PICKLE_B64=$(base64 < token.pickle) \
   jarvis-assistant
 ```
-- The container runs the Flask webhook for Gmail Pub/Sub by default.
-- Mount credentials and contacts as needed.
 
-### 8. Gmail Push Notifications (Optional)
-- Set up a Google Pub/Sub topic and subscription for Gmail push notifications.
-- Deploy `setup_gmail_pubsub.py` (Flask app) and configure Gmail to send notifications to `/gmail-webhook`.
-- See Google documentation for [Gmail push setup](https://developers.google.com/gmail/api/guides/push).
+## 💬 Usage Examples
 
-## How It Works
-- **Email Polling:** Jarvis regularly checks for new unread emails. When a new email arrives, it is processed and, if relevant, triggers scheduling or task actions.
-- **Scheduling:** When asked to schedule a meeting, Jarvis checks your calendar for conflicts, proposes alternatives if needed, and sends invites/emails to contacts.
-- **Task Management:** Add, list, and complete Google Tasks via chat or CLI.
-- **Contacts:** All scheduling uses the `contacts.json` file to resolve names to emails.
-- **Human-in-the-Loop:** For sensitive actions, Jarvis asks for your confirmation before proceeding.
+### **Scheduling Meetings**
+```
+User: "Schedule a meeting with Mahmoud at 3pm today"
+Jarvis: [Checks availability] "I've scheduled a meeting with Mahmoud at 3:00 PM Cairo time. Mahmoud has been invited."
+```
 
-## Developer Notes
-- **Modular Tools:** All Google API interactions are in `tools/` for easy extension.
-- **Credentials:** Never commit your real credentials or tokens. Use environment variables and `.env` files for secrets.
-- **Experimental Voice Assistant:** `ELEVEN_LABS_TEST.Py` demonstrates voice input (Whisper) and output (ElevenLabs TTS). Requires extra dependencies and API keys.
-- **Testing Webhooks:** Use `local_agent_webhook.py` to simulate incoming emails for local development.
-- **Extending:** Add new tools in `tools/` and register their schemas in `main.py` and `app.py`.
+### **Email Processing**
+```
+[Email arrives]: "Can we push the meeting to tomorrow at the same time?"
+Jarvis: [Automatically processes] "I've updated the meeting to tomorrow at the same time."
+```
 
-## Dependencies
-See `requirements.txt` and `pyproject.toml` for a full list. Key packages:
-- `flask`, `streamlit` (web UI & webhooks)
-- `google-api-python-client`, `google-auth-oauthlib` (Google APIs)
-- `openai`, `langfuse` (AI models)
-- `python-dotenv` (env management)
-- `pyaudio`, `noisereduce`, `elevenlabs` (voice assistant, optional)
+### **Task Management**
+```
+User: "Add a task to review the project proposal"
+Jarvis: "I've added the task 'review the project proposal' to your task list."
+```
 
-## License
-This project is for demonstration and hackathon purposes. Please review and adapt for production use.
+### **Calendar Queries**
+```
+User: "What meetings do I have today?"
+Jarvis: "You have a meeting with David today from 11:00 PM to 12:00 AM Cairo time."
+```
+
+## 🔧 Technical Implementation
+
+### **Email Processing Flow**
+1. **Polling**: Background thread checks for new unread emails every 30 seconds
+2. **Analysis**: AI analyzes email content to determine action type
+3. **Tool Selection**: Appropriate tools are called based on email content
+4. **Execution**: Actions are performed automatically (with error handling)
+5. **Notification**: User is informed of completed actions
+
+### **Scheduling Logic**
+1. **Availability Check**: `list_events` tool checks calendar for conflicts
+2. **Timezone Handling**: All times converted to Cairo timezone (+03:00)
+3. **Event Creation**: `create_event` tool creates calendar events
+4. **Guest Invitation**: Automatic email invitations sent to participants
+5. **Confirmation**: User receives confirmation with calendar link
+
+### **Error Handling**
+- **404 Errors**: Graceful handling of missing events
+- **API Failures**: Comprehensive error messages and fallbacks
+- **Timezone Issues**: Proper Cairo timezone conversion
+- **Network Problems**: Retry logic for API calls
+
+## 🔒 Security Features
+
+### **Authentication**
+- **OAuth 2.0**: Secure Google API access
+- **Token Refresh**: Automatic token renewal
+- **Service Account**: Delegated calendar access
+
+### **Data Protection**
+- **Environment Variables**: Secure API key storage
+- **Local Storage**: Credentials stored locally only
+- **No Hardcoding**: No sensitive data in code
+
+### **User Control**
+- **Confirmation Required**: User approval for sensitive actions
+- **Audit Trail**: All actions logged and visible
+- **Manual Override**: User can cancel any automated action
+
+## 📊 Monitoring & Logging
+
+### **Activity Tracking**
+- **Email Processing**: Logs of processed emails and actions taken
+- **Calendar Changes**: Records of created/updated/deleted events
+- **Task Management**: Tracking of task operations
+- **Error Logging**: Comprehensive error reporting
+
+### **Performance Metrics**
+- **Response Time**: Tool execution timing
+- **Success Rates**: API call success tracking
+- **User Interactions**: Conversation flow monitoring
+
+## 🚀 Advanced Features
+
+### **Proactive Assistance**
+- **Email Monitoring**: Automatic processing of incoming emails
+- **Smart Suggestions**: AI-driven recommendations for scheduling
+- **Conflict Resolution**: Automatic handling of scheduling conflicts
+
+### **Intelligent Processing**
+- **Context Awareness**: Maintains conversation context
+- **Natural Language**: Understands various ways to express requests
+- **Error Recovery**: Graceful handling of edge cases
+
+### **Extensibility**
+- **Modular Tools**: Easy to add new functionalities
+- **Plugin Architecture**: Tool-based system for easy extension
+- **API Integration**: Ready for additional service integrations
+
+## 🔧 Development
+
+### **Adding New Tools**
+1. Create new tool file in `tools/` directory
+2. Implement tool function and schema
+3. Add to `TOOLS` list in `main.py`
+4. Update documentation
+
+### **Testing**
+- **Local Testing**: Use `local_agent_webhook.py` for email simulation
+- **API Testing**: Individual tool testing available
+- **Integration Testing**: Full workflow testing
+
+### **Deployment**
+- **Docker**: Containerized deployment ready
+- **Environment Variables**: Secure configuration management
+- **Scaling**: Designed for horizontal scaling
+
+## 📝 Dependencies
+
+### **Core Dependencies**
+- `openai`: AI model integration
+- `langfuse`: AI observability
+- `google-api-python-client`: Google APIs
+- `google-auth-oauthlib`: OAuth authentication
+- `python-dotenv`: Environment management
+
+### **Optional Dependencies**
+- `pyaudio`: Voice input (experimental)
+- `elevenlabs`: Text-to-speech (experimental)
+- `streamlit`: Web UI (if needed)
+
+## 🤝 Contributing
+
+### **Code Structure**
+- **Modular Design**: Tools are independent and reusable
+- **Clear Interfaces**: Well-defined tool schemas
+- **Error Handling**: Comprehensive error management
+- **Documentation**: Inline code documentation
+
+### **Best Practices**
+- **Environment Variables**: Use for all sensitive data
+- **Error Handling**: Graceful degradation
+- **Logging**: Comprehensive activity tracking
+- **Testing**: Test new features thoroughly
+
+## 📄 License
+
+This project is developed for demonstration and personal use. Please review and adapt for production environments.
+
+---
+
+**Jarvis** - Your intelligent personal assistant for email, calendar, and task management.

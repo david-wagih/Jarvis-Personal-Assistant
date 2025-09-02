@@ -21,7 +21,7 @@ def get_credentials():
     - In production (CLOUD_RUN env var set), only loads from token.pickle and never runs the OAuth flow.
     - In local/dev, runs the OAuth flow if needed.
     """
-    print("token.pickle exists:", os.path.exists('token.pickle'), "cwd:", os.getcwd())
+
     creds = None
     is_cloud_run = os.environ.get('CLOUD_RUN') == '1'
     if os.path.exists('token.pickle'):

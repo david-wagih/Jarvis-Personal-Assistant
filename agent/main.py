@@ -1,16 +1,20 @@
 # Imports
 import json
 from langfuse.openai import openai
+from config import get_openai_key
 from tools.calendar_tools import delete_event, get_delete_event_schema, get_update_event_schema, list_events, create_event, get_list_events_schema, get_create_event_schema, update_event
 from tools.mail_tools import list_emails, mark_email_as_read, send_email, get_list_emails_schema, get_send_email_schema
 from tools.process_new_emails_tools import get_process_new_email_schema, process_new_email_tool
 from tools.todos_tools import list_tasks, add_task, complete_task, get_list_tasks_schema, get_add_task_schema, get_complete_task_schema
 from tools.oauth_integration import get_credentials  
 from datetime import datetime
+import pytz
 import threading
 import time
 import os
 
+# Configure OpenAI client with API key
+openai.api_key = get_openai_key()
 # Load contacts
 contacts_path = os.path.join(os.path.dirname(__file__), 'contacts.json')
 with open(contacts_path, 'r') as f:
@@ -20,7 +24,8 @@ with open(contacts_path, 'r') as f:
 contacts_str = "\n".join([f"- {c['name']}: {c['email']}" for c in CONTACTS])
 
 # System prompt for Jarvis assistant
-current_date = datetime.now().strftime("%Y-%m-%d")
+cairo_tz = pytz.timezone('Africa/Cairo')
+current_date = datetime.now(cairo_tz).strftime("%Y-%m-%d")
 SYSTEM_PROMPT = (
     f"The current date is: {current_date}. "
     "You are Jarvis, a proactive AI assistant for David. "
@@ -32,6 +37,10 @@ SYSTEM_PROMPT = (
     "If David is not available, propose the next available time slot and repeat the process as needed. "
     "You always use the Contacts list to resolve names to email addresses. "
     "Here is the Contacts list (name: email):\n" + contacts_str + "\n" 
+    "IMPORTANT: David is located in Cairo, Egypt (UTC+2). When scheduling events, always interpret times as Cairo time. "
+    "For example, if David says '10pm', interpret it as 10:00 PM Cairo time (UTC+2), not UTC. "
+    "Convert all times to RFC3339 format with the correct Cairo timezone offset (+03:00). "
+    "When creating events, use format like '2025-09-02T22:00:00+03:00' for 10:00 PM Cairo time. "
     "You are efficient, polite, and always keep David informed of any changes or confirmations. "
     "You never double-book David and always respect his existing commitments. "
     "You can also help David by summarizing his inbox, upcoming events, and pending todos. "
@@ -42,7 +51,7 @@ SYSTEM_PROMPT = (
 # Initial user/system messages
 messages = [
     {"role": "system", "content": SYSTEM_PROMPT},
-    {"role": "user", "content": "Schedule a meeting with Mahmoud at 3:30pm today."}
+    {"role": "user", "content": ""}
 ]
 
 TOOLS = [
@@ -93,8 +102,16 @@ def poll_unread_emails(process_new_email_tool, interval=60):
                 # --- Inject as user message and run agent proactively ---
                 email_prompt = (
                     f"You received a new email from {email['from']}. Subject: {email['subject']}. Body: {email['body']}. "
-                    "If this is a reschedule request, find the relevant event and update it accordingly. "
-                    "Always confirm with the user before making changes."
+                    "ANALYZE THE EMAIL CONTENT AND TAKE APPROPRIATE ACTION: "
+                    "1. If it's a reschedule request: find the existing meeting and update it "
+                    "2. If it's a new meeting request: check availability and create if possible "
+                    "3. If it's a cancellation: find and delete the meeting "
+                    "4. If it's a confirmation: acknowledge and mark as confirmed "
+                    "5. If it's a general inquiry: respond appropriately "
+                    "6. Always use the correct tools (list_events, create_event, update_event, delete_event, send_email) "
+                    "7. Always confirm with the user before making any calendar changes "
+                    "8. Use the exact details mentioned in the email (names, times, dates) "
+                    "9. If an event is not found when trying to update, inform the user and ask for clarification"
                 )
                 global messages
                 messages.append({"role": "user", "content": email_prompt})
@@ -110,21 +127,9 @@ def poll_unread_emails(process_new_email_tool, interval=60):
                     for tool_call in msg.tool_calls:
                         function_name = tool_call.function.name
                         arguments = json.loads(tool_call.function.arguments)
-                        print(f"Calling tool: {function_name} with arguments: {arguments}")
 
-                        # Human-in-the-loop confirmation for sensitive actions
-                        if function_name in ["create_event", "send_email"]:
-                            confirm = input(f"Do you want to proceed with {function_name.replace('_', ' ')}? (yes/no): ").strip().lower()
-                            if confirm != "yes":
-                                print(f"{function_name.replace('_', ' ').capitalize()} cancelled by user.")
-                                result = {"status": "cancelled", "reason": "User declined confirmation."}
-                                tool_outputs.append({
-                                    "role": "tool",
-                                    "tool_call_id": tool_call.id,
-                                    "name": function_name,
-                                    "content": json.dumps(result)
-                                })
-                                continue  # Skip actual function call
+                        # Human-in-the-loop confirmation for sensitive actions (disabled for proactive email processing)
+                        # For proactive email processing, we skip user confirmation to avoid blocking the thread
 
                         # Proceed as before for all other tools or if confirmed
                         try:
@@ -176,7 +181,6 @@ def poll_unread_emails(process_new_email_tool, interval=60):
                                 result = {"error": "Unknown tool"}
                         except Exception as e:
                             result = {"error": str(e)}
-                        print(f"Tool result: {result}")
                         tool_outputs.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
@@ -204,7 +208,6 @@ def poll_unread_emails(process_new_email_tool, interval=60):
             time.sleep(interval)
 
 def main():
-    openai.langfuse_auth_check()
     get_credentials()
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT}
@@ -232,7 +235,6 @@ def main():
             for tool_call in msg.tool_calls:
                 function_name = tool_call.function.name
                 arguments = json.loads(tool_call.function.arguments)
-                print(f"Calling tool: {function_name} with arguments: {arguments}")
 
                 # Human-in-the-loop confirmation for sensitive actions
                 if function_name in ["create_event", "send_email"]:
@@ -299,7 +301,6 @@ def main():
                         result = {"error": "Unknown tool"}
                 except Exception as e:
                     result = {"error": str(e)}
-                print(f"Tool result: {result}")
                 tool_outputs.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -317,19 +318,8 @@ def main():
             if not (hasattr(msg, "tool_calls") and msg.tool_calls):
                 break
 
-        # Print the full conversation for E2E visibility
-        print("\n--- Conversation ---")
-        for m in messages:
-            role = getattr(m, 'role', None) or (m['role'] if isinstance(m, dict) and 'role' in m else '')
-            content = getattr(m, 'content', None) or (m['content'] if isinstance(m, dict) and 'content' in m else '')
-            name = getattr(m, 'name', None) or (m['name'] if isinstance(m, dict) and 'name' in m else '')
-            if content:
-                print(f"{role.upper()}: {content}")
-            else:
-                print(f"{role.upper()} ({name}): {content}")
-
+        # Print only the assistant's response
         if hasattr(msg, "content") and msg.content:
-            print("\n--- Final Assistant Message ---")
             print(msg.content)
 
         # --- Proactive email processing ---
@@ -355,7 +345,6 @@ def main():
                 for tool_call in msg.tool_calls:
                     function_name = tool_call.function.name
                     arguments = json.loads(tool_call.function.arguments)
-                    print(f"Calling tool: {function_name} with arguments: {arguments}")
 
                     # Human-in-the-loop confirmation for sensitive actions
                     if function_name in ["create_event", "send_email"]:

@@ -5,3 +5,14 @@ google-auth
 google-auth-httplib2
 google-auth-oauthlib
 google-auth-oauthlib
+streamlit
+langfuse
+pytz
+openai
+pyaudio
+noisereduce
+elevenlabs
+scipy
+pydub
+python-dotenv
+audioop-lts

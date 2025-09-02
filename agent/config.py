@@ -5,13 +5,12 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 
 # Load environment variables
-load_dotenv('.env')
+load_dotenv('../.env')
 
 # Configuration
 openai_key = os.environ.get("OPENAI_API_KEY")
 google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 google_calendar_delegated_user = os.environ.get("GOOGLE_CALENDAR_DELEGATED_USER")
-
 SCOPES = [
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/calendar.events'

@@ -36,16 +36,24 @@ Jarvis is an intelligent AI personal assistant that proactively manages emails, 
 
 ## 🏗️ Architecture
 
-### **Core Components**
-- **`main.py`**: Main CLI interface with email polling and conversation loop
+### **Modular Design**
+The application follows a clean, modular architecture with separated concerns:
+
+#### **Core Components**
+- **`main.py`**: Original monolithic implementation (legacy)
+- **`conversation_manager.py`**: Handles conversation flow and message management
+- **`tool_executor.py`**: Manages tool calling and execution logic
+- **`email_processor.py`**: Handles email polling and processing
+- **`system_config.py`**: Manages system configuration and contacts
 - **`config.py`**: Environment configuration and API key management
-- **`tools/`**: Modular tool system for different functionalities
-  - `calendar_tools.py`: Google Calendar operations
-  - `mail_tools.py`: Gmail operations
-  - `todos_tools.py`: Google Tasks operations
-  - `oauth_integration.py`: Google OAuth authentication
-  - `process_new_emails_tools.py`: Email processing logic
-  - `gmail_watch_tools.py`: Gmail webhook setup
+
+#### **Tool System**
+- **`tools/calendar_tools.py`**: Google Calendar operations
+- **`tools/mail_tools.py`**: Gmail operations
+- **`tools/todos_tools.py`**: Google Tasks operations
+- **`tools/oauth_integration.py`**: Google OAuth authentication
+- **`tools/process_new_emails_tools.py`**: Email processing logic
+- **`tools/gmail_watch_tools.py`**: Gmail webhook setup
 
 ### **Configuration Files**
 - **`contacts.json`**: Contact list for name-to-email resolution
@@ -166,6 +174,13 @@ Jarvis: "You have a meeting with David today from 11:00 PM to 12:00 AM Cairo tim
 
 ## 🔧 Technical Implementation
 
+### **Modular Architecture Benefits**
+- **Separation of Concerns**: Each module has a single, clear responsibility
+- **Maintainability**: Easier to understand, debug, and extend
+- **Testability**: Individual components can be unit tested
+- **Reusability**: Modules can be used independently
+- **Scalability**: Easy to add new features or modify existing ones
+
 ### **Email Processing Flow**
 1. **Polling**: Background thread checks for new unread emails every 30 seconds
 2. **Analysis**: AI analyzes email content to determine action type
@@ -235,16 +250,26 @@ Jarvis: "You have a meeting with David today from 11:00 PM to 12:00 AM Cairo tim
 
 ## 🔧 Development
 
-### **Adding New Tools**
+### **Code Organization**
+The refactored codebase follows clean architecture principles:
+
+#### **Module Responsibilities**
+- **`conversation_manager.py`**: Manages conversation state and AI interactions
+- **`tool_executor.py`**: Handles tool execution and result processing
+- **`email_processor.py`**: Processes emails and triggers proactive actions
+- **`system_config.py`**: Manages system configuration and contacts
+- **`config.py`**: Handles environment variables and API configuration
+
+#### **Adding New Tools**
 1. Create new tool file in `tools/` directory
 2. Implement tool function and schema
-3. Add to `TOOLS` list in `main.py`
+3. Add to tool initialization in `conversation_manager.py`
 4. Update documentation
 
 ### **Testing**
-- **Local Testing**: Use `local_agent_webhook.py` for email simulation
-- **API Testing**: Individual tool testing available
+- **Unit Testing**: Individual module testing
 - **Integration Testing**: Full workflow testing
+- **API Testing**: Tool-specific testing
 
 ### **Deployment**
 - **Docker**: Containerized deployment ready
@@ -279,6 +304,23 @@ Jarvis: "You have a meeting with David today from 11:00 PM to 12:00 AM Cairo tim
 - **Logging**: Comprehensive activity tracking
 - **Testing**: Test new features thoroughly
 
+## 🔄 Migration Guide
+
+### **From Monolithic to Modular**
+The codebase has been refactored from a single `main.py` file to a modular architecture:
+
+#### **Key Changes**
+- **Separated Concerns**: Each module has a single responsibility
+- **Improved Error Handling**: Better error management and recovery
+- **Enhanced Configuration**: More robust environment variable handling
+- **Better Testing**: Individual components can be tested
+
+#### **Benefits**
+- **Maintainability**: Easier to understand and modify
+- **Extensibility**: Simple to add new features
+- **Debugging**: Issues can be isolated to specific modules
+- **Performance**: Cleaner code paths and better error handling
+
 ## 📄 License
 
 This project is developed for demonstration and personal use. Please review and adapt for production environments.
@@ -286,3 +328,5 @@ This project is developed for demonstration and personal use. Please review and 
 ---
 
 **Jarvis** - Your intelligent personal assistant for email, calendar, and task management.
+
+*Built with clean architecture principles and modular design for maximum maintainability and extensibility.*

@@ -5,10 +5,26 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 
 # Load environment variables
-load_dotenv('../.env')
+import os
+# Try multiple possible paths for .env file
+env_paths = [
+    '../.env',  # When running from agent directory
+    '.env',     # When running from root directory
+    os.path.join(os.path.dirname(__file__), '..', '.env'),  # Absolute path
+]
+
+for env_path in env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        break
 
 # Configuration
 openai_key = os.environ.get("OPENAI_API_KEY")
+if not openai_key:
+    print("WARNING: OPENAI_API_KEY not found in environment variables")
+    print(f"Available environment variables: {list(os.environ.keys())}")
+else:
+    print(f"OpenAI API key loaded successfully (length: {len(openai_key)})")
 google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 google_calendar_delegated_user = os.environ.get("GOOGLE_CALENDAR_DELEGATED_USER")
 SCOPES = [

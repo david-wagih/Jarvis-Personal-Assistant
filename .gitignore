@@ -12,3 +12,8 @@ wheels/
 token.pickle
 
 .env
+
+credentials_oauth.json
+service_account.json
+
+token.pickle

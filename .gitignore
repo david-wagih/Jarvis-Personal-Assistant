@@ -14,6 +14,8 @@ token.pickle
 .env
 
 credentials_oauth.json
-service_account.json
+# service_account.json
 
 token.pickle
+.vscode/
+.DS_Store

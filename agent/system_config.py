@@ -1,21 +1,61 @@
 """
 System Configuration
-Handles system setup, contacts, prompts, and configuration management.
+Handles system setup, contacts, prompts, configuration management, and environment variables.
 """
 
 import json
 import os
+import sys
 from datetime import datetime
 import pytz
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+from google.oauth2 import service_account
 
 class SystemConfig:
     def __init__(self):
+        # Load environment variables
+        self._load_environment_variables()
+        
+        # Initialize timezone and date
         self.cairo_tz = pytz.timezone('Africa/Cairo')
         self.current_date = datetime.now(self.cairo_tz).strftime("%Y-%m-%d")
+        
+        # Load contacts and create system prompt
         self.contacts = self._load_contacts()
         self.contacts_str = self._format_contacts()
         self.system_prompt = self._create_system_prompt()
+        
+        # Initialize Google API scopes
+        self.scopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events'
+        ]
+        
+    def _load_environment_variables(self):
+        """Load environment variables from .env file."""
+        # Try multiple possible paths for .env file
+        env_paths = [
+            '../.env',  # When running from agent directory
+            '.env',     # When running from root directory
+            os.path.join(os.path.dirname(__file__), '..', '.env'),  # Absolute path
+        ]
+
+        for env_path in env_paths:
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+                break
+        
+        # Load configuration variables
+        self.openai_key = os.environ.get("OPENAI_API_KEY")
+        if not self.openai_key:
+            print("WARNING: OPENAI_API_KEY not found in environment variables")
+            print(f"Available environment variables: {list(os.environ.keys())}")
+        else:
+            print(f"OpenAI API key loaded successfully (length: {len(self.openai_key)})")
+            
+        self.google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        self.google_calendar_delegated_user = os.environ.get("GOOGLE_CALENDAR_DELEGATED_USER")
         
     def _load_contacts(self) -> List[Dict[str, str]]:
         """Load contacts from contacts.json file."""
@@ -62,22 +102,30 @@ class SystemConfig:
         """Get the current system prompt."""
         return self.system_prompt
     
-    def get_contacts(self) -> List[Dict[str, str]]:
-        """Get the list of contacts."""
-        return self.contacts
+    def get_openai_key(self) -> str:
+        """Get the OpenAI API key."""
+        return self.openai_key
     
-    def get_contact_email(self, name: str) -> str:
-        """Get email address for a contact by name."""
-        for contact in self.contacts:
-            if contact['name'].lower() == name.lower():
-                return contact['email']
-        return None
-    
-    def get_current_date(self) -> str:
-        """Get the current date in Cairo timezone."""
-        return self.current_date
-    
-    def refresh_date(self):
-        """Refresh the current date (useful for long-running sessions)."""
-        self.current_date = datetime.now(self.cairo_tz).strftime("%Y-%m-%d")
-        self.system_prompt = self._create_system_prompt()
+    def get_google_credentials(self):
+        """Get Google service account credentials."""
+        if not self.google_credentials:
+            print("ERROR: GOOGLE_APPLICATION_CREDENTIALS is not set in the environment or .env file.")
+            sys.exit(1)
+        if not os.path.isfile(self.google_credentials):
+            print(f"ERROR: Service account file '{self.google_credentials}' does not exist.")
+            sys.exit(1)
+        try:
+            with open(self.google_credentials, 'r') as f:
+                data = json.load(f)
+            for field in ["client_email", "private_key", "token_uri"]:
+                if field not in data:
+                    print(f"ERROR: Service account file is missing required field: {field}")
+                    sys.exit(1)
+        except Exception as e:
+            print(f"ERROR: Failed to read or parse service account file: {e}")
+            sys.exit(1)
+        credentials = service_account.Credentials.from_service_account_file(
+            self.google_credentials, scopes=self.scopes
+        ).with_subject(self.google_calendar_delegated_user)
+        return credentials
+

@@ -16,9 +16,7 @@ class JarvisAssistant:
         self.system_config = SystemConfig()
         
         # Initialize conversation manager
-        self.conversation_manager = ConversationManager(
-            self.system_config.get_system_prompt()
-        )
+        self.conversation_manager = ConversationManager(self.system_config)
         
         # Initialize tool executor (with confirmation for main conversation)
         self.tool_executor = ToolExecutor(require_confirmation=True)
